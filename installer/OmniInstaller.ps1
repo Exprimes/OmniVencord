@@ -6,6 +6,8 @@ $Repo = "Exprimes/OmniVencord"
 $Dir = Join-Path $env:APPDATA "OmniVencord"
 $Dist = Join-Path $Dir "dist"
 $Cli = Join-Path $Dir "VencordInstallerCli.exe"
+# Dossier où Vencord lit ses réglages quand Discord est lancé normalement (%APPDATA%\discord\..\Vencord)
+$VencordSettings = Join-Path $env:APPDATA "Vencord\settings"
 $Files = "patcher.js", "preload.js", "renderer.js", "renderer.css"
 
 $ErrorActionPreference = "Stop"
@@ -27,8 +29,28 @@ function Invoke-InstallerCli([string[]]$CliArgs) {
     # Indique à l'installateur officiel d'utiliser notre dossier dist au lieu de la build Vencord officielle
     $env:VENCORD_USER_DATA_DIR = $Dir
     $env:VENCORD_DEV_INSTALL = "1"
-    & $Cli @CliArgs
-    if ($LASTEXITCODE -ne 0) { throw "L'installateur Vencord a échoué (code $LASTEXITCODE)." }
+    try {
+        & $Cli @CliArgs
+        if ($LASTEXITCODE -ne 0) { throw "L'installateur Vencord a échoué (code $LASTEXITCODE)." }
+    } finally {
+        # Sinon Discord, relancé depuis ce script, hérite de la variable et enregistre ses réglages
+        # dans $Dir au lieu de %APPDATA%\Vencord : tout semble perdu au redémarrage du PC.
+        Remove-Item Env:VENCORD_USER_DATA_DIR, Env:VENCORD_DEV_INSTALL -ErrorAction SilentlyContinue
+    }
+}
+
+# Récupère les réglages enregistrés au mauvais endroit par les anciennes versions d'OmniInstaller
+function Restore-Settings {
+    $lost = Join-Path $Dir "settings"
+    if (-not (Test-Path (Join-Path $lost "settings.json"))) { return }
+
+    if (Test-Path $VencordSettings) {
+        Copy-Item $VencordSettings "$VencordSettings.bak-$(Get-Date -Format yyyyMMdd-HHmmss)" -Recurse
+    }
+    New-Item -ItemType Directory -Force $VencordSettings | Out-Null
+    Copy-Item (Join-Path $lost "*") $VencordSettings -Recurse -Force
+    Remove-Item -Recurse -Force $lost
+    Write-Host "Tes anciens réglages (plugins activés, fonds, notes...) ont été récupérés." -ForegroundColor Green
 }
 
 function Install-Omni {
@@ -45,6 +67,7 @@ function Install-Omni {
     Stop-Discord
     Write-Host "Installation dans Discord..." -ForegroundColor Cyan
     Invoke-InstallerCli @("-install", "-branch", "auto")
+    Restore-Settings
     Write-Host "`nOmniVencord ($($release.name)) est installé !" -ForegroundColor Green
 }
 
