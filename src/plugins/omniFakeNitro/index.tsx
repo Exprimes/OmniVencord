@@ -28,8 +28,9 @@ import { Heading } from "@components/Heading";
 import { Paragraph } from "@components/Paragraph";
 import { ApngBlendOp, ApngDisposeOp, parseAPNG } from "@utils/apng";
 import { Devs } from "@utils/constants";
-import { getCurrentGuild } from "@utils/discord";
+import { copyWithToast, fetchUserProfile, getCurrentGuild } from "@utils/discord";
 import { Logger } from "@utils/Logger";
+import { useAwaiter } from "@utils/react";
 import definePlugin, { OptionType, PluginNative } from "@utils/types";
 import type { Emoji, Message, RenderModalProps, Sticker } from "@vencord/discord-types";
 import { StickerFormatType } from "@vencord/discord-types/enums";
@@ -41,6 +42,7 @@ import type { ReactElement, ReactNode } from "react";
 
 import { BigUploadIcon, makeBigUploadButton } from "./BigUploadButton";
 import neonStyle from "./neon.css?managed";
+import { decodeOmniProfile, encodeOmniProfile, isShareable, OmniProfile } from "./omniProfile";
 
 const Native = VencordNative.pluginHelpers.OmniFakeNitro as PluginNative<typeof import("./native")>;
 
@@ -120,16 +122,48 @@ function findCustomEmojiByName(emojiName: string): any {
 }
 
 
+// getUserProfile d'origine (avant notre hook), pour lire la vraie bio des autres sans boucler
+let rawGetProfile: ((userId: string) => any) | null = null;
+const getRawProfile = (userId: string) => (rawGetProfile ?? UserProfileStore.getUserProfile).call(UserProfileStore, userId);
+
+const omniProfileCache = new Map<string, { bio: string; data: OmniProfile | null; }>();
+
+// Profil Omni d'un autre utilisateur, lu dans sa bio (null s'il n'a pas mis de code ou si son profil n'est pas chargé)
+function othersOmniProfile(userId: string): OmniProfile | null {
+    const bio: string | undefined = getRawProfile(userId)?.bio;
+    if (!bio) return null;
+
+    const cached = omniProfileCache.get(userId);
+    if (cached?.bio === bio) return cached.data;
+
+    const data = decodeOmniProfile(bio);
+    omniProfileCache.set(userId, { bio, data });
+    return data;
+}
+
+const isMe = (userId?: string) => !!userId && userId === UserStore.getCurrentUser()?.id;
+
+// Mêmes cartes que dans neon.css : on y met la couleur d'aura de la personne affichée
+const NEON_CARDS = 'div[class*="biteSize_"], div[class*="fullSize_"], div[class*="userProfileOuter_"], div[class*="userPopoutOuter_"], div[class*="outer_"], div[role="dialog"], div[class*="accountProfilePopout_"]';
+
+function setCardNeonColor(badge: HTMLElement | null, color: string) {
+    let card: HTMLElement | null | undefined = badge?.closest<HTMLElement>(NEON_CARDS);
+    // la plus haute carte, pour que toutes les cartes imbriquées héritent de la couleur
+    for (let up = card?.parentElement?.closest<HTMLElement>(NEON_CARDS); up; up = up.parentElement?.closest<HTMLElement>(NEON_CARDS)) card = up;
+    card?.style.setProperty("--omni-neon", color);
+}
+
 const omniBadge: ProfileBadge = {
     id: "omni-vip-badge",
     description: "Soutien Omni",
     position: BadgePosition.START,
-    shouldShow: ({ userId }) => userId === UserStore.getCurrentUser()?.id && settings.store.enableOmniBadge,
-    component: () => (
+    shouldShow: ({ userId }) => isMe(userId) ? settings.store.enableOmniBadge : othersOmniProfile(userId) != null,
+    component: ({ userId }) => (
         <Tooltip text="Soutien Omni">
             {tooltipProps => (
                 <img
                     {...tooltipProps}
+                    ref={el => setCardNeonColor(el, isMe(userId) ? settings.store.neonColor : othersOmniProfile(userId)?.color ?? DEFAULT_NEON_COLOR)}
                     src={`data:image/webp;base64,${omniLogo}`}
                     alt="Soutien Omni"
                     width={20}
@@ -224,6 +258,44 @@ function NeonColorPicker() {
             />
             <Button size="small" variant="secondary" onClick={() => { settings.store.neonColor = DEFAULT_NEON_COLOR; applyNeonColor(); }}>
                 Couleur par défaut
+            </Button>
+        </div>
+    );
+}
+
+function ShareOmniProfile() {
+    const s = settings.use(["customAvatarUrl", "customBannerUrl", "neonColor"]);
+    // Charge ta propre bio (sinon on ne peut pas dire si le code y est déjà)
+    const [, , loading] = useAwaiter(() => fetchUserProfile(UserStore.getCurrentUser().id));
+    if (loading) return null;
+
+    const avatar = cleanMediaUrl(s.customAvatarUrl);
+    const banner = cleanMediaUrl(s.customBannerUrl);
+    const color = /^#[0-9a-f]{6}$/i.test(s.neonColor) ? s.neonColor : DEFAULT_NEON_COLOR;
+    const code = encodeOmniProfile({ avatar, banner, color });
+
+    const inBio = decodeOmniProfile(getRawProfile(UserStore.getCurrentUser().id)?.bio);
+    const upToDate = inBio != null && encodeOmniProfile(inBio) === code;
+    const notShared = [["avatar", avatar], ["bannière", banner]].filter(([, url]) => url && !isShareable(url)).map(([name]) => name);
+
+    return (
+        <div className="omni-share">
+            <Heading>Partager mon profil Omni</Heading>
+            <Paragraph>
+                Les autres utilisateurs d'OmniFakeNitro verront ton avatar, ta bannière, ton badge et ton aura (avec ta couleur).
+                Copie le code invisible et colle-le n'importe où dans ta bio (Paramètres → Profils → À propos de moi).
+                Recopie-le après chaque changement d'avatar, de bannière ou de couleur.
+            </Paragraph>
+            <Paragraph className={upToDate ? "omni-share-ok" : "omni-share-warn"}>
+                {upToDate ? "✅ Ta bio contient ton code à jour." : inBio ? "⚠️ Le code de ta bio n'est plus à jour : recopie-le." : "⚠️ Ton code n'est pas encore dans ta bio."}
+            </Paragraph>
+            {notShared.length > 0 && (
+                <Paragraph className="omni-share-warn">
+                    ⚠️ Ton {notShared.join(" et ta ")} ne sera pas partagé(e) : héberge l'image sur files.catbox.moe (ou i.imgur.com) pour que les autres puissent la voir.
+                </Paragraph>
+            )}
+            <Button size="small" onClick={() => copyWithToast(code, "Code copié ! Colle-le dans ta bio.")}>
+                Copier le code invisible ({[...code].length} caractères)
             </Button>
         </div>
     );
@@ -364,6 +436,10 @@ const settings = definePluginSettings({
     neonColor: {
         type: OptionType.CUSTOM,
         default: DEFAULT_NEON_COLOR
+    },
+    shareProfile: {
+        type: OptionType.COMPONENT,
+        component: ShareOmniProfile
     },
     bigUploadExpiry: {
         displayName: "Durée d'expiration des gros fichiers",
@@ -1024,6 +1100,7 @@ export default definePlugin({
         if ((!uid || uid === myId) && settings.store.customBannerUrl) {
             return cleanMediaUrl(settings.store.customBannerUrl);
         }
+        if (uid && uid !== myId) return othersOmniProfile(uid)?.banner;
     },
 
     hookAvatar() {
@@ -1034,8 +1111,11 @@ export default definePlugin({
                 this.origGetAvatarURL = proto.getAvatarURL;
                 const orig = this.origGetAvatarURL;
                 proto.getAvatarURL = function (guildId?: string, size?: number, canAnimate?: boolean) {
-                    if (this.id === UserStore.getCurrentUser()?.id && settings.store.customAvatarUrl) {
-                        return cleanMediaUrl(settings.store.customAvatarUrl);
+                    if (isMe(this.id)) {
+                        if (settings.store.customAvatarUrl) return cleanMediaUrl(settings.store.customAvatarUrl);
+                    } else {
+                        const avatar = othersOmniProfile(this.id)?.avatar;
+                        if (avatar) return avatar;
                     }
                     return orig.call(this, guildId, size, canAnimate);
                 };
@@ -1072,8 +1152,11 @@ export default definePlugin({
             if (this.origIconUtils) {
                 const origIcon = this.origIconUtils;
                 (IconUtils as any).getUserAvatarURL = function (user: any, ...args: any[]) {
-                    if (user?.id === UserStore.getCurrentUser()?.id && settings.store.customAvatarUrl) {
-                        return cleanMediaUrl(settings.store.customAvatarUrl);
+                    if (isMe(user?.id)) {
+                        if (settings.store.customAvatarUrl) return cleanMediaUrl(settings.store.customAvatarUrl);
+                    } else if (user?.id) {
+                        const avatar = othersOmniProfile(user.id)?.avatar;
+                        if (avatar) return avatar;
                     }
                     return origIcon.call(this, user, ...args);
                 };
@@ -1081,19 +1164,21 @@ export default definePlugin({
         }
 
         if (UserProfileStore && !this.origGetProfile) {
-            this.origGetProfile = UserProfileStore.getUserProfile;
+            this.origGetProfile = rawGetProfile = UserProfileStore.getUserProfile;
             const self = this;
             UserProfileStore.getUserProfile = function (userId: string) {
                 const profile = self.origGetProfile.call(this, userId);
-                if (profile && userId === UserStore.getCurrentUser()?.id) {
-                    if (settings.store.customBannerUrl) {
-                        const bannerUrl = cleanMediaUrl(settings.store.customBannerUrl);
-                        profile.banner = "omni_banner";
-                        profile.getBannerURL = () => bannerUrl;
-                        profile.getPreviewBanner = () => bannerUrl;
-                    }
-                    profile.themeColors ??= [0xa855f7, 0x1e1b4b];
+                if (!profile) return profile;
+
+                const bannerUrl = isMe(userId)
+                    ? settings.store.customBannerUrl && cleanMediaUrl(settings.store.customBannerUrl)
+                    : othersOmniProfile(userId)?.banner;
+                if (bannerUrl) {
+                    profile.banner = "omni_banner";
+                    profile.getBannerURL = () => bannerUrl;
+                    profile.getPreviewBanner = () => bannerUrl;
                 }
+                if (isMe(userId)) profile.themeColors ??= [0xa855f7, 0x1e1b4b];
                 return profile;
             };
         }
@@ -1269,7 +1354,7 @@ export default definePlugin({
         }
         if (this.origGetProfile && UserProfileStore) {
             UserProfileStore.getUserProfile = this.origGetProfile;
-            this.origGetProfile = null;
+            this.origGetProfile = rawGetProfile = null;
         }
         removeMessagePreSendListener(this.preSend);
         removeMessagePreEditListener(this.preEdit);

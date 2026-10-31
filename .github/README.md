@@ -7,7 +7,7 @@
 
 | Plugin | Ce qu'il fait |
 |---|---|
-| **OmniFakeNitro** | Emojis/stickers de partout, stream 1080p 60 FPS, avatar/bannière perso, badge Omni, aura néon (couleur au choix), envoi de gros fichiers (jusqu'à 1 Go) |
+| **OmniFakeNitro** | Emojis/stickers de partout, stream 1080p 60 FPS, avatar/bannière perso, badge Omni, aura néon (couleur au choix), envoi de gros fichiers (jusqu'à 1 Go). Avec le code invisible dans ta bio, les autres utilisateurs d'OmniFakeNitro voient ton profil Omni |
 | **OmniBackground** | Fond d'écran Discord avec tes images et GIF (10 de chaque), enregistrés dans un menu déroulant |
 | **OmniNotes** | Panneau avec ta note sur la personne à côté de son profil, modifiable directement |
 
