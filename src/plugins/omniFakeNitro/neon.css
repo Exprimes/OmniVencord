@@ -1,0 +1,40 @@
+/*
+ * OmniFakeNitro - Aura Néon, activée/désactivée par le plugin (import ?managed)
+ * La couleur vient de --omni-neon, définie par le plugin selon le réglage "Couleur de l'aura".
+ */
+
+@keyframes omniNeonPulse {
+    0% {
+        box-shadow: 0 0 4px color-mix(in srgb, var(--omni-neon) 70%, transparent), 0 0 8px color-mix(in srgb, var(--omni-neon) 35%, transparent) !important;
+    }
+    100% {
+        box-shadow: 0 0 6px var(--omni-neon), 0 0 14px color-mix(in srgb, var(--omni-neon) 55%, transparent) !important;
+    }
+}
+
+/* Aura Néon : seulement sur les cartes qui portent ton badge (= ton profil).
+   Pas de "inner_" : il est imbriqué dans "outer_" et doublait la bordure. */
+:is(
+    div[class*="biteSize_"],
+    div[class*="fullSize_"],
+    div[class*="userProfileOuter_"],
+    div[class*="userPopoutOuter_"],
+    div[class*="outer_"]:has([class*="banner_"]),
+    div[role="dialog"]:has([class*="banner_"]),
+    div[class*="accountProfilePopout_"]
+):has(.omni-vip-badge) {
+    animation: omniNeonPulse 2.5s infinite alternate ease-in-out !important;
+    border: 1px solid var(--omni-neon) !important;
+    border-radius: 12px !important;
+}
+
+/* Halo léger autour de ta photo de profil, dans ces mêmes cartes */
+:is(
+    div[class*="biteSize_"],
+    div[class*="fullSize_"],
+    div[class*="userProfileOuter_"],
+    div[class*="userPopoutOuter_"],
+    div[class*="accountProfilePopout_"]
+):has(.omni-vip-badge) :is([class*="avatar_"][class*="wrapper_"], [class*="avatarWrapper_"]) {
+    filter: drop-shadow(0 0 4px var(--omni-neon)) !important;
+}

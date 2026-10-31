@@ -1,0 +1,46 @@
+/* OmniBackground - Styles du gestionnaire de fonds (réglages du plugin) */
+
+.omni-bg-manager {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.omni-bg-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.omni-bg-add > :first-child {
+    flex: 1;
+    min-width: 0;
+}
+
+.omni-bg-item img {
+    width: 64px;
+    height: 36px;
+    object-fit: cover;
+    border-radius: 4px;
+    flex: none;
+}
+
+.omni-bg-item span {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-default);
+}
+
+.omni-bg-error {
+    color: var(--text-feedback-critical, #f23f43);
+}
+
+.omni-bg-tip {
+    padding: 8px 12px;
+    border-radius: 8px;
+    border-left: 3px solid var(--text-feedback-warning, #f0b232);
+    background: var(--background-mod-subtle, rgba(255, 255, 255, 0.04));
+}

@@ -1,0 +1,109 @@
+/*
+ * OmniBackground - Styles du fond, activés par le plugin (import ?managed) seulement quand un fond est choisi.
+ * La transparence est limitée au calque principal de Discord (le 1er "layer_") :
+ * les Paramètres, modales et popouts gardent leur fond opaque normal.
+ */
+
+/* Fond d'écran global */
+body::before {
+    content: "" !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: var(--omni-bg-url) center center / cover no-repeat fixed !important;
+    z-index: -1 !important;
+    pointer-events: none !important;
+}
+
+/* Transparence des variables Discord, seulement dans le calque principal.
+   Discord redéfinit ses variables sur chaque élément .theme-dark/.theme-light, d'où ces sélecteurs en plus. */
+body [class*="layers_"] > [class*="layer_"]:first-child,
+body [class*="layers_"] > [class*="layer_"]:first-child .theme-dark,
+body [class*="layers_"] > [class*="layer_"]:first-child .theme-light {
+    --background-base-lowest: transparent !important;
+    --background-base-lower: transparent !important;
+    --background-base-low: transparent !important;
+    --bg-base-primary: transparent !important;
+    --bg-base-secondary: transparent !important;
+    --bg-base-tertiary: transparent !important;
+    --background-primary: transparent !important;
+    --background-secondary: transparent !important;
+    --background-secondary-alt: transparent !important;
+    --background-tertiary: transparent !important;
+}
+
+/* Conteneurs racines transparents */
+body,
+body #app-mount,
+body #app-mount [class*="app_"],
+body #app-mount [class*="app_"] > [class*="bg_"],
+body #app-mount [class*="layers_"],
+body [class*="layers_"] > [class*="layer_"]:first-child,
+body [class*="layers_"] > [class*="layer_"]:first-child [class*="base_"] {
+    background-color: transparent !important;
+    background: transparent !important;
+}
+
+/* 1. Colonne des serveurs */
+body [class*="layers_"] > [class*="layer_"]:first-child [class*="guilds_"],
+body [class*="layers_"] > [class*="layer_"]:first-child [class*="guilds_"] [class*="scroller_"],
+body [class*="layers_"] > [class*="layer_"]:first-child [class*="guilds_"] [class*="wrapper_"] {
+    background-color: rgba(0, 0, 0, 0.40) !important;
+    background: rgba(0, 0, 0, 0.40) !important;
+}
+
+/* 2. Colonne des salons (sidebar) */
+body [class*="layers_"] > [class*="layer_"]:first-child [class*="base_"] [class*="sidebar_"],
+body [class*="layers_"] > [class*="layer_"]:first-child [class*="base_"] [class*="sidebar_"] [class*="container_"],
+body [class*="layers_"] > [class*="layer_"]:first-child [class*="base_"] [class*="sidebar_"] [class*="scroller_"] {
+    background-color: rgba(0, 0, 0, 0.35) !important;
+    background: rgba(0, 0, 0, 0.35) !important;
+}
+
+/* 3. Panneau utilisateur en bas à gauche */
+body [class*="layers_"] > [class*="layer_"]:first-child [class*="panels_"],
+body [class*="layers_"] > [class*="layer_"]:first-child [class*="panels_"] [class*="container_"] {
+    background-color: rgba(0, 0, 0, 0.50) !important;
+    background: rgba(0, 0, 0, 0.50) !important;
+}
+
+/* 4. Zone de discussion / Messages */
+body [class*="layers_"] > [class*="layer_"]:first-child [class*="chat_"],
+body [class*="layers_"] > [class*="layer_"]:first-child [class*="chatContent_"],
+body [class*="layers_"] > [class*="layer_"]:first-child [class*="chatContent_"] [class*="messagesWrapper_"],
+body [class*="layers_"] > [class*="layer_"]:first-child [class*="chatContent_"] [class*="scroller_"] {
+    background-color: rgba(0, 0, 0, 0.25) !important;
+    background: rgba(0, 0, 0, 0.25) !important;
+}
+
+/* 5. Barre de saisie de message */
+body [class*="layers_"] > [class*="layer_"]:first-child [class*="channelTextArea_"] {
+    background-color: rgba(18, 18, 28, 0.75) !important;
+}
+
+/* 6. En-tête supérieur */
+body [class*="layers_"] > [class*="layer_"]:first-child [class*="title_"][class*="container_"],
+body [class*="layers_"] > [class*="layer_"]:first-child [class*="subtitleContainer_"],
+body [class*="layers_"] > [class*="layer_"]:first-child [class*="header_"][class*="container_"] {
+    background-color: rgba(0, 0, 0, 0.35) !important;
+    background: rgba(0, 0, 0, 0.35) !important;
+}
+
+/* 7. Colonne des membres */
+body [class*="layers_"] > [class*="layer_"]:first-child [class*="membersWrap_"],
+body [class*="layers_"] > [class*="layer_"]:first-child [class*="members_"],
+body [class*="layers_"] > [class*="layer_"]:first-child [class*="members_"] [class*="scroller_"],
+body [class*="layers_"] > [class*="layer_"]:first-child [class*="container_"][class*="members_"] {
+    background-color: rgba(0, 0, 0, 0.35) !important;
+    background: rgba(0, 0, 0, 0.35) !important;
+}
+
+/* 8. Messages privés (liste d'amis et DMs) */
+body [class*="layers_"] > [class*="layer_"]:first-child [class*="privateChannels_"],
+body [class*="layers_"] > [class*="layer_"]:first-child [class*="privateChannels_"] [class*="scroller_"],
+body [class*="layers_"] > [class*="layer_"]:first-child [class*="nowPlayingColumn_"] {
+    background-color: rgba(0, 0, 0, 0.35) !important;
+    background: rgba(0, 0, 0, 0.35) !important;
+}

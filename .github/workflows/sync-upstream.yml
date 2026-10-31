@@ -1,0 +1,33 @@
+name: Sync Vencord upstream
+# Récupère chaque jour les nouveautés de Vendicated/Vencord, puis relance le build
+# pour que tout le monde les reçoive via le bouton "Mettre à jour" de Vencord.
+on:
+    schedule:
+        - cron: "0 5 * * *"
+    workflow_dispatch:
+permissions:
+    contents: write
+    actions: write
+
+jobs:
+    Sync:
+        runs-on: ubuntu-latest
+
+        steps:
+            # shortcut: GITHUB_TOKEN ne peut pas modifier .github/workflows ; si Vencord change ses workflows
+            # ou en cas de conflit, ce job échoue (mail GitHub) -> faire "Sync fork" à la main sur GitHub.
+            - name: Merge Vendicated/Vencord into main
+              id: sync
+              run: |
+                  res=$(gh api -X POST "repos/$GITHUB_REPOSITORY/merge-upstream" -f branch=main)
+                  echo "$res"
+                  echo "merged=$(echo "$res" | jq -r '.merge_type != "none"')" >> "$GITHUB_OUTPUT"
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            # Un push fait avec GITHUB_TOKEN ne déclenche pas build.yml, on le lance nous-mêmes
+            - name: Rebuild
+              if: steps.sync.outputs.merged == 'true'
+              run: gh workflow run build.yml --repo "$GITHUB_REPOSITORY" --ref main
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
