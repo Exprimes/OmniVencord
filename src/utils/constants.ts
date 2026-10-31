@@ -51,6 +51,12 @@ export const Devs = /* #__PURE__*/ Object.freeze({
         name: "V",
         id: 343383572805058560n
     },
+    // OmniVencord (placé ici et pas à la fin pour éviter les conflits quand Vencord ajoute des devs)
+    Exprimes: {
+        name: "Exprimes",
+        id: 607952433368531006n,
+        badge: false
+    },
     Apexo: {
         name: "Apexo",
         id: 228548952687902720n

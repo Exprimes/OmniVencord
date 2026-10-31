@@ -8,6 +8,7 @@ import "./styles.css";
 
 import { definePluginSettings } from "@api/Settings";
 import ErrorBoundary from "@components/ErrorBoundary";
+import { Devs } from "@utils/constants";
 import definePlugin, { OptionType } from "@utils/types";
 import type { User } from "@vencord/discord-types";
 import { ReactDOM, RestAPI, useEffect, useRef, useState } from "@webpack/common";
@@ -119,7 +120,7 @@ function NotePanel({ user }: { user: User; }) {
 export default definePlugin({
     name: "OmniNotes",
     description: "Ouvre un panneau avec ta note sur la personne à côté de son profil quand tu cliques dessus.",
-    authors: [{ name: "Exprimes", id: 607952433368531006n }],
+    authors: [Devs.Exprimes],
     tags: ["Friends", "Utility"],
 
     settings,

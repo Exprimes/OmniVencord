@@ -12,6 +12,7 @@ import { Button } from "@components/Button";
 import { Heading } from "@components/Heading";
 import { Link } from "@components/Link";
 import { Paragraph } from "@components/Paragraph";
+import { Devs } from "@utils/constants";
 import definePlugin, { OptionType, PluginNative } from "@utils/types";
 import { Select, showToast, TextInput, useState } from "@webpack/common";
 
@@ -177,7 +178,7 @@ const settings = definePluginSettings({
 
 export default definePlugin({
     name: "OmniBackground",
-    authors: [{ name: "Exprimes", id: 607952433368531006n }],
+    authors: [Devs.Exprimes],
     description: "Change le fond d'écran de Discord avec tes propres images et GIF (10 de chaque), enregistrés dans un menu déroulant.",
     tags: ["Appearance", "Customisation"],
 

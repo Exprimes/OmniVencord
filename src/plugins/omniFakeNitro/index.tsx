@@ -428,7 +428,7 @@ function showCannotEmbedNotice() {
 export default definePlugin({
     name: "OmniFakeNitro",
     // Basé sur FakeNitro de Vencord (GPL-3.0) - merci aux auteurs originaux
-    authors: [{ name: "Exprimes", id: 607952433368531006n }, Devs.Arjix, Devs.D3SOX, Devs.Ven, Devs.fawn, Devs.captain, Devs.Nuckyz, Devs.AutumnVN, Devs.sadan],
+    authors: [Devs.Exprimes, Devs.Arjix, Devs.D3SOX, Devs.Ven, Devs.fawn, Devs.captain, Devs.Nuckyz, Devs.AutumnVN, Devs.sadan],
     description: "Le pack ultime OmniFakeNitro : Emojis/Stickers illimités, Streaming 1080p 60 FPS, Thèmes & Profils personnalisés, Aura Néon, et envoi de gros fichiers jusqu'à 1 Go.",
 
     chatBarButton: {
