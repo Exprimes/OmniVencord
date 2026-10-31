@@ -384,10 +384,10 @@ const settings = definePluginSettings({
     // ===== Exclusivités OmniFakeNitro =====
     customBannerUrl: {
         displayName: "Bannière personnalisée (Omni Studio)",
-        description: "Collez le lien direct (ou lien Tenor) de votre image ou GIF animé de bannière",
+        description: "Héberge ton image ou GIF sur catbox.moe, puis colle ici le lien files.catbox.moe/… (seuls les liens Catbox ou Imgur sont visibles par les autres utilisateurs d'OmniFakeNitro)",
         type: OptionType.STRING,
-        default: "https://media1.tenor.com/m/UeDIs1MeXsYAAAAC/solo.gif",
-        placeholder: "https://media1.tenor.com/m/UeDIs1MeXsYAAAAC/solo.gif",
+        default: "",
+        placeholder: "https://files.catbox.moe/...",
         onChange(val: string) {
             if (val?.includes("tenor.com") && !val.endsWith(".gif")) {
                 Native.resolveTenorUrl(val).then(direct => {
@@ -400,10 +400,10 @@ const settings = definePluginSettings({
     },
     customAvatarUrl: {
         displayName: "Avatar personnalisé (Omni Studio)",
-        description: "Collez le lien direct (ou lien Tenor) de votre photo de profil ou GIF animé",
+        description: "Héberge ton image ou GIF sur catbox.moe, puis colle ici le lien files.catbox.moe/… (seuls les liens Catbox ou Imgur sont visibles par les autres utilisateurs d'OmniFakeNitro)",
         type: OptionType.STRING,
-        default: "https://media1.tenor.com/m/zJ3ogAnoziMAAAAC/made-by-aur.gif",
-        placeholder: "https://media1.tenor.com/m/zJ3ogAnoziMAAAAC/made-by-aur.gif",
+        default: "",
+        placeholder: "https://files.catbox.moe/...",
         onChange(val: string) {
             if (val?.includes("tenor.com") && !val.endsWith(".gif")) {
                 Native.resolveTenorUrl(val).then(direct => {
