@@ -3,12 +3,13 @@
  * La couleur vient de --omni-neon, définie par le plugin selon le réglage "Couleur de l'aura".
  */
 
-@keyframes omniNeonPulse {
+@keyframes omni-neon-pulse {
     0% {
-        box-shadow: 0 0 4px color-mix(in srgb, var(--omni-neon) 70%, transparent), 0 0 8px color-mix(in srgb, var(--omni-neon) 35%, transparent) !important;
+        box-shadow: 0 0 4px color-mix(in srgb, var(--omni-neon) 70%, transparent), 0 0 8px color-mix(in srgb, var(--omni-neon) 35%, transparent);
     }
+
     100% {
-        box-shadow: 0 0 6px var(--omni-neon), 0 0 14px color-mix(in srgb, var(--omni-neon) 55%, transparent) !important;
+        box-shadow: 0 0 6px var(--omni-neon), 0 0 14px color-mix(in srgb, var(--omni-neon) 55%, transparent);
     }
 }
 
@@ -23,7 +24,7 @@
     div[role="dialog"]:has([class*="banner_"]),
     div[class*="accountProfilePopout_"]
 ):has(.omni-vip-badge) {
-    animation: omniNeonPulse 2.5s infinite alternate ease-in-out !important;
+    animation: omni-neon-pulse 2.5s infinite alternate ease-in-out !important;
     border: 1px solid var(--omni-neon) !important;
     border-radius: 12px !important;
 }

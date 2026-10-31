@@ -42,5 +42,5 @@
     padding: 8px 12px;
     border-radius: 8px;
     border-left: 3px solid var(--text-feedback-warning, #f0b232);
-    background: var(--background-mod-subtle, rgba(255, 255, 255, 0.04));
+    background: var(--background-mod-subtle, rgb(255 255 255 / 4%));
 }

@@ -4,6 +4,8 @@
  * les Paramètres, modales et popouts gardent leur fond opaque normal.
  */
 
+/* stylelint-disable no-descending-specificity -- sélecteurs de zones Discord indépendantes, l'ordre est voulu */
+
 /* Fond d'écran global */
 body::before {
     content: "" !important;
@@ -42,7 +44,6 @@ body #app-mount [class*="app_"] > [class*="bg_"],
 body #app-mount [class*="layers_"],
 body [class*="layers_"] > [class*="layer_"]:first-child,
 body [class*="layers_"] > [class*="layer_"]:first-child [class*="base_"] {
-    background-color: transparent !important;
     background: transparent !important;
 }
 
@@ -50,23 +51,20 @@ body [class*="layers_"] > [class*="layer_"]:first-child [class*="base_"] {
 body [class*="layers_"] > [class*="layer_"]:first-child [class*="guilds_"],
 body [class*="layers_"] > [class*="layer_"]:first-child [class*="guilds_"] [class*="scroller_"],
 body [class*="layers_"] > [class*="layer_"]:first-child [class*="guilds_"] [class*="wrapper_"] {
-    background-color: rgba(0, 0, 0, 0.40) !important;
-    background: rgba(0, 0, 0, 0.40) !important;
+    background: rgb(0 0 0 / 40%) !important;
 }
 
 /* 2. Colonne des salons (sidebar) */
 body [class*="layers_"] > [class*="layer_"]:first-child [class*="base_"] [class*="sidebar_"],
 body [class*="layers_"] > [class*="layer_"]:first-child [class*="base_"] [class*="sidebar_"] [class*="container_"],
 body [class*="layers_"] > [class*="layer_"]:first-child [class*="base_"] [class*="sidebar_"] [class*="scroller_"] {
-    background-color: rgba(0, 0, 0, 0.35) !important;
-    background: rgba(0, 0, 0, 0.35) !important;
+    background: rgb(0 0 0 / 35%) !important;
 }
 
 /* 3. Panneau utilisateur en bas à gauche */
 body [class*="layers_"] > [class*="layer_"]:first-child [class*="panels_"],
 body [class*="layers_"] > [class*="layer_"]:first-child [class*="panels_"] [class*="container_"] {
-    background-color: rgba(0, 0, 0, 0.50) !important;
-    background: rgba(0, 0, 0, 0.50) !important;
+    background: rgb(0 0 0 / 50%) !important;
 }
 
 /* 4. Zone de discussion / Messages */
@@ -74,21 +72,19 @@ body [class*="layers_"] > [class*="layer_"]:first-child [class*="chat_"],
 body [class*="layers_"] > [class*="layer_"]:first-child [class*="chatContent_"],
 body [class*="layers_"] > [class*="layer_"]:first-child [class*="chatContent_"] [class*="messagesWrapper_"],
 body [class*="layers_"] > [class*="layer_"]:first-child [class*="chatContent_"] [class*="scroller_"] {
-    background-color: rgba(0, 0, 0, 0.25) !important;
-    background: rgba(0, 0, 0, 0.25) !important;
+    background: rgb(0 0 0 / 25%) !important;
 }
 
 /* 5. Barre de saisie de message */
 body [class*="layers_"] > [class*="layer_"]:first-child [class*="channelTextArea_"] {
-    background-color: rgba(18, 18, 28, 0.75) !important;
+    background-color: rgb(18 18 28 / 75%) !important;
 }
 
 /* 6. En-tête supérieur */
 body [class*="layers_"] > [class*="layer_"]:first-child [class*="title_"][class*="container_"],
 body [class*="layers_"] > [class*="layer_"]:first-child [class*="subtitleContainer_"],
 body [class*="layers_"] > [class*="layer_"]:first-child [class*="header_"][class*="container_"] {
-    background-color: rgba(0, 0, 0, 0.35) !important;
-    background: rgba(0, 0, 0, 0.35) !important;
+    background: rgb(0 0 0 / 35%) !important;
 }
 
 /* 7. Colonne des membres */
@@ -96,14 +92,12 @@ body [class*="layers_"] > [class*="layer_"]:first-child [class*="membersWrap_"],
 body [class*="layers_"] > [class*="layer_"]:first-child [class*="members_"],
 body [class*="layers_"] > [class*="layer_"]:first-child [class*="members_"] [class*="scroller_"],
 body [class*="layers_"] > [class*="layer_"]:first-child [class*="container_"][class*="members_"] {
-    background-color: rgba(0, 0, 0, 0.35) !important;
-    background: rgba(0, 0, 0, 0.35) !important;
+    background: rgb(0 0 0 / 35%) !important;
 }
 
 /* 8. Messages privés (liste d'amis et DMs) */
 body [class*="layers_"] > [class*="layer_"]:first-child [class*="privateChannels_"],
 body [class*="layers_"] > [class*="layer_"]:first-child [class*="privateChannels_"] [class*="scroller_"],
 body [class*="layers_"] > [class*="layer_"]:first-child [class*="nowPlayingColumn_"] {
-    background-color: rgba(0, 0, 0, 0.35) !important;
-    background: rgba(0, 0, 0, 0.35) !important;
+    background: rgb(0 0 0 / 35%) !important;
 }

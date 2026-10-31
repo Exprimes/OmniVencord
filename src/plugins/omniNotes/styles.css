@@ -10,8 +10,8 @@
     padding: 12px;
     border-radius: 8px;
     background: var(--background-surface-high, var(--background-floating, #232428));
-    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
-    box-shadow: var(--shadow-high, 0 8px 16px rgba(0, 0, 0, 0.24));
+    border: 1px solid var(--border-subtle, rgb(255 255 255 / 8%));
+    box-shadow: var(--shadow-high, 0 8px 16px rgb(0 0 0 / 24%));
     color: var(--text-default, #dbdee1);
     z-index: 1;
 }
@@ -29,8 +29,8 @@
     resize: vertical;
     padding: 8px;
     border-radius: 6px;
-    border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
-    background: var(--input-background, rgba(0, 0, 0, 0.2));
+    border: 1px solid var(--border-subtle, rgb(255 255 255 / 8%));
+    background: var(--input-background, rgb(0 0 0 / 20%));
     color: inherit;
     font: inherit;
     font-size: 14px;
