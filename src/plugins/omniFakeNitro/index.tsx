@@ -450,7 +450,7 @@ const settings = definePluginSettings({
     },
     bigUploadExpiry: {
         displayName: "Durée d'expiration des gros fichiers",
-        description: "Durée de conservation des fichiers envoyés avec le bouton de la barre de message",
+        description: "Durée de conservation des fichiers jusqu'à 1 Go envoyés avec le bouton de la barre de message. Au-delà (jusqu'à 3 Go), ils restent toujours 3 jours.",
         type: OptionType.SELECT,
         options: [
             { label: "1 heure", value: "1h" },
@@ -512,7 +512,7 @@ export default definePlugin({
     name: "OmniFakeNitro",
     // Basé sur FakeNitro de Vencord (GPL-3.0) - merci aux auteurs originaux
     authors: [Devs.Exprimes, Devs.Arjix, Devs.D3SOX, Devs.Ven, Devs.fawn, Devs.captain, Devs.Nuckyz, Devs.AutumnVN, Devs.sadan],
-    description: "Le pack ultime OmniFakeNitro : Emojis/Stickers illimités, Streaming 1080p 60 FPS, Thèmes & Profils personnalisés, Aura Néon, et envoi de gros fichiers jusqu'à 1 Go.",
+    description: "Le pack ultime OmniFakeNitro : Emojis/Stickers illimités, Streaming 1080p 60 FPS, Thèmes & Profils personnalisés, Aura Néon, et envoi de gros fichiers jusqu'à 3 Go.",
 
     chatBarButton: {
         icon: BigUploadIcon,

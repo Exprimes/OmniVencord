@@ -4,28 +4,39 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-import { IpcMainInvokeEvent } from "electron";
+import { BrowserWindow, dialog, IpcMainInvokeEvent, OpenDialogOptions } from "electron";
+import { statSync } from "fs";
+import { basename } from "path";
 
+import { postFile } from "./upload";
+
+const LITTERBOX_MAX_SIZE = 1024 ** 3; // Au-delà : temp.sh (4 Go max, gardé 3 jours)
 const ALLOWED_TIMES = new Set(["1h", "12h", "24h", "72h"]);
 
-export async function uploadToLitterbox(_: IpcMainInvokeEvent, data: Uint8Array, fileName: string, time: string): Promise<string> {
-    if (!ALLOWED_TIMES.has(time)) time = "72h";
+// Choisi ici et gardé ici : le renderer ne peut pas demander l'envoi d'un autre fichier du PC
+let pickedPath: string | null = null;
 
-    const form = new FormData();
-    form.append("reqtype", "fileupload");
-    form.append("time", time);
-    form.append("fileToUpload", new Blob([data as unknown as BlobPart]), fileName);
+export async function pickBigFile(event: IpcMainInvokeEvent) {
+    const options: OpenDialogOptions = { properties: ["openFile"] };
+    const win = BrowserWindow.fromWebContents(event.sender);
+    const { canceled, filePaths } = await (win ? dialog.showOpenDialog(win, options) : dialog.showOpenDialog(options));
+    if (canceled || !filePaths[0]) return null;
 
-    const res = await fetch("https://litterbox.catbox.moe/resources/internals/api.php", {
-        method: "POST",
-        body: form
-    });
+    pickedPath = filePaths[0];
+    return { name: basename(pickedPath), size: statSync(pickedPath).size };
+}
 
-    const text = (await res.text()).trim();
-    if (!res.ok || !text.startsWith("https://"))
-        throw new Error(`Litterbox a refusé l'upload (${res.status}): ${text.slice(0, 200)}`);
+export async function uploadPickedFile(_: IpcMainInvokeEvent, time: string): Promise<string> {
+    if (!pickedPath) throw new Error("Aucun fichier choisi.");
+    const name = basename(pickedPath);
 
-    return text;
+    if (statSync(pickedPath).size > LITTERBOX_MAX_SIZE)
+        return postFile("https://temp.sh/upload", {}, "file", pickedPath, name);
+
+    return postFile("https://litterbox.catbox.moe/resources/internals/api.php", {
+        reqtype: "fileupload",
+        time: ALLOWED_TIMES.has(time) ? time : "72h"
+    }, "fileToUpload", pickedPath, name);
 }
 
 export async function resolveTenorUrl(_: IpcMainInvokeEvent, url: string): Promise<string> {
