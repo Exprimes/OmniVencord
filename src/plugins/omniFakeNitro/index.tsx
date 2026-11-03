@@ -32,9 +32,9 @@ import { copyWithToast, fetchUserProfile, getCurrentGuild } from "@utils/discord
 import { Logger } from "@utils/Logger";
 import { useAwaiter } from "@utils/react";
 import definePlugin, { OptionType, PluginNative } from "@utils/types";
-import type { Emoji, Message, RenderModalProps, Sticker } from "@vencord/discord-types";
-import { StickerFormatType } from "@vencord/discord-types/enums";
-import { findByCodeLazy, findByPropsLazy, proxyLazyWebpack } from "@webpack";
+import type { CloudUpload as TCloudUpload, Emoji, Message, RenderModalProps, Sticker } from "@vencord/discord-types";
+import { CloudUploadPlatform, StickerFormatType } from "@vencord/discord-types/enums";
+import { findByCodeLazy, findByPropsLazy, findLazy, proxyLazyWebpack } from "@webpack";
 import { ChannelStore, ConfirmModal, DraftType, EmojiStore, FluxDispatcher, GuildMemberStore, GuildStore, IconUtils, openModal, PermissionsBits, PermissionStore, showToast, StickersStore, Tooltip, UploadHandler, UserProfileStore, UserSettingsActionCreators, UserSettingsProtoStore, UserStore } from "@webpack/common";
 import omniLogo from "file://omni_logo.webp?base64";
 import { applyPalette, GIFEncoder, quantize } from "gifenc";
@@ -182,6 +182,7 @@ const omniBadge: ProfileBadge = {
 };
 
 const BINARY_READ_OPTIONS = findByPropsLazy("readerFactory");
+const CloudUpload: typeof TCloudUpload = findLazy(m => m.prototype?.trackUploadFinished);
 
 function searchProtoClassField(localName: string, protoClass: any) {
     const field = protoClass?.fields?.find((field: any) => field.localName === localName);
@@ -362,6 +363,12 @@ const settings = definePluginSettings({
         type: OptionType.BOOLEAN,
         default: true,
         restartNeeded: true
+    },
+    hideEmojiLinks: {
+        displayName: "Zéro lien (emojis en image jointe)",
+        description: "Envoie les emojis et stickers comme images jointes au message : aucun lien visible, même pour ceux qui n'ont pas le plugin. L'image apparaît sous le texte, pas dans la phrase. Les messages modifiés gardent un lien.",
+        type: OptionType.BOOLEAN,
+        default: true
     },
     useHyperLinks: {
         displayName: "Utiliser des liens texte (Hyperliens)",
@@ -1072,6 +1079,22 @@ export default definePlugin({
         UploadHandler.promptToUpload([file], ChannelStore.getChannel(channelId), DraftType.ChannelMessage);
     },
 
+    // Discord envoie lui-même les fichiers de attachmentsToUpload avec le message, le texte de la barre est donc bien vidé
+    async moveLinksToAttachments(channelId: string, messageObj: { content: string; }, options: object, links: { text: string; url: string; name: string; }[]) {
+        const files = await Promise.all(links.map(async ({ url, name }) => {
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`${url} : HTTP ${res.status}`);
+            const blob = await res.blob();
+            return new File([blob], `${name.replace(/\W/g, "_")}.${new URL(url).pathname.split(".").pop()}`, { type: blob.type });
+        }));
+
+        Object.assign(options, {
+            attachmentsToUpload: files.map(file => new CloudUpload({ file, isThumbnail: false, platform: CloudUploadPlatform.WEB }, channelId))
+        });
+        for (const { text } of links) messageObj.content = messageObj.content.replace(text, "");
+        messageObj.content = messageObj.content.trim();
+    },
+
     canUseEmote(e: Emoji, channelId: string) {
         if (e.type === 0) return true;
         if (e.available === false) return false;
@@ -1187,10 +1210,16 @@ export default definePlugin({
             return;
         }
 
-        this.preSend = addMessagePreSendListener(async (channelId, messageObj, options) => {
+        this.preSend = addMessagePreSendListener(async (channelId, messageObj, options, props) => {
             const { guildId } = this;
 
             let hasBypass = false;
+            const links: { text: string; url: string; name: string; }[] = [];
+            const makeLink = (url: URL | string, name: string) => {
+                const text = s.useHyperLinks ? `[${s.hyperLinkText.replaceAll("{{NAME}}", name)}](${url})` : `${url}`;
+                links.push({ text, url: `${url}`, name });
+                return text;
+            };
 
             stickerBypass: {
                 if (!s.enableStickerBypass)
@@ -1238,9 +1267,7 @@ export default definePlugin({
                     url.searchParams.set("name", sticker.name);
                     url.searchParams.set("lossless", "true");
 
-                    const linkText = s.hyperLinkText.replaceAll("{{NAME}}", sticker.name);
-
-                    messageObj.content += `${getWordBoundary(messageObj.content, messageObj.content.length - 1)}${s.useHyperLinks ? `[${linkText}](${url})` : url}`;
+                    messageObj.content += `${getWordBoundary(messageObj.content, messageObj.content.length - 1)}${makeLink(url, sticker.name)}`;
                     options.stickerIds!.length = 0;
                 }
             }
@@ -1259,10 +1286,8 @@ export default definePlugin({
                     url.searchParams.set("name", emoji.name);
                     url.searchParams.set("lossless", "true");
 
-                    const linkText = s.hyperLinkText.replaceAll("{{NAME}}", emoji.name);
-
                     messageObj.content = messageObj.content.replace(emojiString, (match, offset, origStr) => {
-                        return `${getWordBoundary(origStr, offset - 1)}${s.useHyperLinks ? `[${linkText}](${url})` : url}${getWordBoundary(origStr, offset + match.length)}`;
+                        return `${getWordBoundary(origStr, offset - 1)}${makeLink(url, emoji.name)}${getWordBoundary(origStr, offset + match.length)}`;
                     });
                 }
 
@@ -1274,8 +1299,7 @@ export default definePlugin({
                     const emojiSize = s.emojiSize ?? DEFAULT_EMOJI_SIZE;
                     const ext = animated ? "gif" : "webp";
                     const url = `https://cdn.discordapp.com/emojis/${emojiId}.${ext}?size=${emojiSize}&quality=lossless`;
-                    const linkText = s.hyperLinkText.replaceAll("{{NAME}}", emojiName);
-                    return s.useHyperLinks ? `[${linkText}](${url})` : `${url} `;
+                    return `${makeLink(url, emojiName)}${s.useHyperLinks ? "" : " "}`;
                 }));
 
                 // Remplacement universel de tout code :nom_emoji: laissé en texte brut (hors code, hors \échappés)
@@ -1286,11 +1310,21 @@ export default definePlugin({
                         const ext = found.animated ? "gif" : "webp";
                         const emojiSize = s.emojiSize ?? DEFAULT_EMOJI_SIZE;
                         const url = `https://cdn.discordapp.com/emojis/${found.id}.${ext}?size=${emojiSize}&quality=lossless`;
-                        const linkText = s.hyperLinkText.replaceAll("{{NAME}}", found.name);
-                        return s.useHyperLinks ? `[${linkText}](${url})` : `${url} `;
+                        return `${makeLink(url, found.name)}${s.useHyperLinks ? "" : " "}`;
                     }
                     return match;
                 }));
+            }
+
+            // Avec des fichiers déjà joints, Discord passe par un autre chemin d'envoi : on garde les liens.
+            // shortcut: au-delà de 10 fichiers (limite Discord) tout reste en liens, à découper si ça gêne.
+            if (s.hideEmojiLinks && links.length && links.length <= 10 && !props.hasAttachments && hasAttachmentPerms(channelId)) {
+                try {
+                    await this.moveLinksToAttachments(channelId, messageObj, options, links);
+                    hasBypass = false;
+                } catch (e) {
+                    logger.error("Impossible de joindre les emojis, envoi avec des liens :", e);
+                }
             }
 
             if (hasBypass && !s.disableEmbedPermissionCheck && !hasEmbedPerms(channelId)) {
