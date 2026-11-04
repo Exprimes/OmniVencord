@@ -8,7 +8,7 @@ import { createReadStream, statSync } from "fs";
 import { request } from "https";
 
 // Lit le fichier depuis le disque au fur et à mesure : sa taille n'a aucun effet sur la mémoire utilisée
-export function postFile(url: string, fields: Record<string, string>, fileField: string, path: string, fileName: string) {
+export function postFile(url: string, fields: Record<string, string>, fileField: string, path: string, fileName: string, onProgress?: (sent: number) => void) {
     return new Promise<string>((resolve, reject) => {
         const boundary = `----OmniUpload${Date.now()}`;
         const textParts = Object.entries(fields).map(([name, value]) => `--${boundary}\r\nContent-Disposition: form-data; name="${name}"\r\n\r\n${value}\r\n`);
@@ -38,6 +38,8 @@ export function postFile(url: string, fields: Record<string, string>, fileField:
         const file = createReadStream(path);
         file.on("error", e => req.destroy(e));
         file.on("end", () => req.end(tail));
+        let sent = 0;
+        file.on("data", chunk => onProgress?.(sent += chunk.length));
         req.write(head);
         file.pipe(req, { end: false });
     });

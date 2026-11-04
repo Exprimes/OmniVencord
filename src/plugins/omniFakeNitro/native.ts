@@ -26,17 +26,38 @@ export async function pickBigFile(event: IpcMainInvokeEvent) {
     return { name: basename(pickedPath), size: statSync(pickedPath).size };
 }
 
+let uploadProgress = 0;
+
+export function getUploadProgress() {
+    return uploadProgress;
+}
+
 export async function uploadPickedFile(_: IpcMainInvokeEvent, time: string): Promise<string> {
     if (!pickedPath) throw new Error("Aucun fichier choisi.");
-    const name = basename(pickedPath);
+    const path = pickedPath;
+    const name = basename(path);
+    const { size } = statSync(path);
+    const onProgress = (sent: number) => uploadProgress = sent / size;
+    const toTempSh = () => {
+        uploadProgress = 0;
+        return postFile("https://temp.sh/upload", {}, "file", path, name, onProgress);
+    };
 
-    if (statSync(pickedPath).size > LITTERBOX_MAX_SIZE)
-        return postFile("https://temp.sh/upload", {}, "file", pickedPath, name);
+    if (size > LITTERBOX_MAX_SIZE) return toTempSh();
 
-    return postFile("https://litterbox.catbox.moe/resources/internals/api.php", {
-        reqtype: "fileupload",
-        time: ALLOWED_TIMES.has(time) ? time : "72h"
-    }, "fileToUpload", pickedPath, name);
+    uploadProgress = 0;
+    try {
+        return await postFile("https://litterbox.catbox.moe/resources/internals/api.php", {
+            reqtype: "fileupload",
+            time: ALLOWED_TIMES.has(time) ? time : "72h"
+        }, "fileToUpload", path, name, onProgress);
+    } catch (litterboxError) {
+        try {
+            return await toTempSh();
+        } catch (tempShError) {
+            throw new Error(`${(litterboxError as Error).message} / ${(tempShError as Error).message}`);
+        }
+    }
 }
 
 export async function resolveTenorUrl(_: IpcMainInvokeEvent, url: string): Promise<string> {

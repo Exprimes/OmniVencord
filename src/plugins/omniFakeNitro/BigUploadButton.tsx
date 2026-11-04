@@ -7,11 +7,10 @@
 import { ChatBarButton, ChatBarButtonFactory } from "@api/ChatButtons";
 import { insertTextIntoChatInputBox } from "@utils/discord";
 import { IconComponent, PluginNative } from "@utils/types";
-import { showToast, useState } from "@webpack/common";
+import { showToast, useEffect, useState } from "@webpack/common";
 
 const Native = VencordNative.pluginHelpers.OmniFakeNitro as PluginNative<typeof import("./native")>;
 
-const LITTERBOX_MAX_SIZE = 1024 ** 3;
 const MAX_SIZE = 3 * 1024 ** 3;
 
 export const BigUploadIcon: IconComponent = ({ height = 20, width = 20, className }) => (
@@ -24,39 +23,63 @@ function formatSize(bytes: number) {
     return bytes >= 1024 ** 3 ? `${(bytes / 1024 ** 3).toFixed(2)} Go` : `${(bytes / 1024 ** 2).toFixed(1)} Mo`;
 }
 
+// Hors du composant : l'envoi continue si on change de salon et que le bouton est recréé
+let uploading = false;
+
 export function makeBigUploadButton(getTime: () => string): ChatBarButtonFactory {
     return ({ isMainChat }) => {
-        const [busy, setBusy] = useState(false);
+        const [progress, setProgress] = useState<number | null>(null);
+
+        useEffect(() => {
+            const timer = setInterval(async () => setProgress(uploading ? await Native.getUploadProgress() : null), 500);
+            return () => clearInterval(timer);
+        }, []);
+
         if (!isMainChat) return null;
 
         async function onClick() {
-            if (busy) return;
-            const file = await Native.pickBigFile();
-            if (!file) return;
+            if (uploading) return;
 
-            if (file.size > MAX_SIZE) {
-                showToast({ text: `Fichier trop gros (${formatSize(file.size)}). Max 3 Go.`, variant: "critical" });
+            // Après une mise à jour sans redémarrage complet, Discord tourne encore avec l'ancien code natif
+            if (!Native.pickBigFile) {
+                showToast({ text: "Quitte complètement Discord (clic droit sur l'icône près de l'horloge) puis rouvre-le.", variant: "critical" });
                 return;
             }
 
-            setBusy(true);
-            showToast({ text: `Upload de ${file.name} (${formatSize(file.size)})...`, variant: "default" });
             try {
+                const file = await Native.pickBigFile();
+                if (!file) return;
+
+                if (file.size > MAX_SIZE) {
+                    showToast({ text: `Fichier trop gros (${formatSize(file.size)}). Max 3 Go.`, variant: "critical" });
+                    return;
+                }
+
+                uploading = true;
+                setProgress(0);
+                showToast({ text: `Upload de ${file.name} (${formatSize(file.size)})...`, variant: "default" });
                 const url = await Native.uploadPickedFile(getTime());
                 insertTextIntoChatInputBox(url + " ");
-                const kept = file.size > LITTERBOX_MAX_SIZE ? " Plus de 1 Go : le fichier reste 3 jours." : "";
+                const kept = url.includes("temp.sh") ? " Le fichier reste 3 jours." : "";
                 showToast({ text: `Upload terminé ! Lien ajouté au message.${kept}`, variant: "success" });
             } catch (e) {
                 console.error("[OmniFakeNitro] Upload échoué", e);
-                showToast({ text: `Échec de l'upload : ${(e as Error).message}`, variant: "critical" });
+                const reason = (e as Error).message.replace(/^Error invoking remote method '[^']+': (Error: )?/, "");
+                showToast({ text: `Échec de l'upload : ${reason}`, variant: "critical" });
             } finally {
-                setBusy(false);
+                uploading = false;
+                setProgress(null);
             }
         }
 
+        const percent = progress === null ? null : `${Math.min(100, Math.round(progress * 100))} %`;
+        const tooltip = percent === null
+            ? "Envoyer un gros fichier (jusqu'à 3 Go)"
+            : progress! >= 1 ? "Fichier envoyé, le serveur le traite..." : `Upload en cours : ${percent}`;
+
         return (
-            <ChatBarButton tooltip={busy ? "Upload en cours..." : "Envoyer un gros fichier (jusqu'à 3 Go)"} onClick={onClick}>
-                <BigUploadIcon />
+            <ChatBarButton tooltip={tooltip} onClick={onClick}>
+                {percent === null ? <BigUploadIcon /> : <span className="omni-upload-percent">{percent}</span>}
             </ChatBarButton>
         );
     };
