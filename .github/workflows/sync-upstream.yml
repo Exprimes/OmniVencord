@@ -15,7 +15,7 @@ jobs:
 
         steps:
             # shortcut: GITHUB_TOKEN ne peut pas modifier .github/workflows ; si Vencord change ses workflows
-            # ou en cas de conflit, ce job échoue (mail GitHub) -> faire "Sync fork" à la main sur GitHub.
+            # ou en cas de conflit, ce job échoue (mail GitHub) -> fusionner à la main en local. Ne jamais utiliser "Discard commits" de "Sync fork".
             - name: Merge Vendicated/Vencord into main
               id: sync
               run: |
