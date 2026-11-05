@@ -16,7 +16,30 @@
     z-index: 1;
 }
 
+.omni-notes-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.omni-notes-side {
+    flex-shrink: 0;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-muted, #949ba4);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.omni-notes-side:hover {
+    color: var(--text-default, #dbdee1);
+    background: var(--input-background, rgb(0 0 0 / 20%));
+}
+
 .omni-notes-title {
+    min-width: 0;
     font-weight: 600;
     font-size: 14px;
     overflow: hidden;

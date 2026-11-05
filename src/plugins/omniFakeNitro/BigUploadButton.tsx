@@ -38,7 +38,10 @@ export function makeBigUploadButton(getTime: () => string): ChatBarButtonFactory
         if (!isMainChat) return null;
 
         async function onClick() {
-            if (uploading) return;
+            if (uploading) {
+                Native.cancelUpload();
+                return;
+            }
 
             // Après une mise à jour sans redémarrage complet, Discord tourne encore avec l'ancien code natif
             if (!Native.pickBigFile) {
@@ -59,6 +62,11 @@ export function makeBigUploadButton(getTime: () => string): ChatBarButtonFactory
                 setProgress(0);
                 showToast({ text: `Upload de ${file.name} (${formatSize(file.size)})...`, variant: "default" });
                 const url = await Native.uploadPickedFile(getTime());
+                if (url === null) {
+                    showToast({ text: "Upload annulé.", variant: "default" });
+                    return;
+                }
+
                 insertTextIntoChatInputBox(url + " ");
                 const kept = url.includes("temp.sh") ? " Le fichier reste 3 jours." : "";
                 showToast({ text: `Upload terminé ! Lien ajouté au message.${kept}`, variant: "success" });
@@ -75,7 +83,7 @@ export function makeBigUploadButton(getTime: () => string): ChatBarButtonFactory
         const percent = progress === null ? null : `${Math.min(100, Math.round(progress * 100))} %`;
         const tooltip = percent === null
             ? "Envoyer un gros fichier (jusqu'à 3 Go)"
-            : progress! >= 1 ? "Fichier envoyé, le serveur le traite..." : `Upload en cours : ${percent}`;
+            : `${progress! >= 1 ? "Fichier envoyé, le serveur le traite..." : `Upload en cours : ${percent}`} (clique pour annuler)`;
 
         return (
             <ChatBarButton tooltip={tooltip} onClick={onClick}>

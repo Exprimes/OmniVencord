@@ -22,6 +22,15 @@ const settings = definePluginSettings({
         description: "Affiche le panneau même quand tu n'as encore rien écrit sur la personne (pratique pour en ajouter une vite)",
         type: OptionType.BOOLEAN,
         default: true
+    },
+    side: {
+        displayName: "Côté du panneau",
+        description: "Côté du profil où s'ouvre le panneau. S'il n'y a pas la place, il s'ouvre de l'autre côté.",
+        type: OptionType.SELECT,
+        options: [
+            { label: "Droite", value: "right", default: true },
+            { label: "Gauche", value: "left" }
+        ]
     }
 });
 
@@ -42,7 +51,8 @@ function saveNote(userId: string, note: string) {
 function NotePanel({ user }: { user: User; }) {
     const anchorRef = useRef<HTMLSpanElement>(null);
     const [host, setHost] = useState<HTMLElement | null>(null);
-    const [onLeft, setOnLeft] = useState(false);
+    const [space, setSpace] = useState({ left: true, right: true });
+    const { side } = settings.use(["side"]);
     const [note, setNote] = useState<string | null>(null);
     const [status, setStatus] = useState("");
     const pending = useRef<string | null>(null);
@@ -55,15 +65,16 @@ function NotePanel({ user }: { user: User; }) {
         return () => { alive = false; };
     }, [user.id]);
 
-    // On se met dans le calque du popup (son parent) : un clic dans le panneau ne ferme pas le popup
+    // Dans le popup lui-même : Discord y enferme le focus, une zone de texte placée à côté ne pourrait pas le garder
     useEffect(() => {
         const popout = anchorRef.current?.closest<HTMLElement>('[class*="userPopoutOuter_"], [role="dialog"]');
-        const layer = popout?.parentElement;
-        if (!popout || !layer) return;
+        if (!popout) return;
 
         const r = popout.getBoundingClientRect();
-        setOnLeft(r.right + GAP + PANEL_WIDTH > window.innerWidth);
-        setHost(layer);
+        setSpace({ left: r.left >= GAP + PANEL_WIDTH, right: r.right + GAP + PANEL_WIDTH <= window.innerWidth });
+        popout.style.overflow = "visible"; // Le panneau dépasse du popup
+        if (getComputedStyle(popout).position === "static") popout.style.position = "relative";
+        setHost(popout);
     }, []);
 
     function flush() {
@@ -89,6 +100,8 @@ function NotePanel({ user }: { user: User; }) {
     }
 
     const hidden = note === "" && !settings.store.showWhenEmpty;
+    const onLeft = side === "left" ? space.left : !space.right;
+    const canSwitch = onLeft ? space.right : space.left;
 
     return (
         <>
@@ -98,7 +111,20 @@ function NotePanel({ user }: { user: User; }) {
                     className="omni-notes-panel"
                     style={{ width: PANEL_WIDTH, [onLeft ? "right" : "left"]: `calc(100% + ${GAP}px)` }}
                 >
-                    <div className="omni-notes-title">📝 Note sur {user.globalName ?? user.username}</div>
+                    <div className="omni-notes-header">
+                        <div className="omni-notes-title">📝 Note sur {user.globalName ?? user.username}</div>
+                        {canSwitch && (
+                            <button
+                                type="button"
+                                className="omni-notes-side"
+                                title={onLeft ? "Mettre à droite du profil" : "Mettre à gauche du profil"}
+                                aria-label={onLeft ? "Mettre à droite du profil" : "Mettre à gauche du profil"}
+                                onClick={() => settings.store.side = onLeft ? "right" : "left"}
+                            >
+                                {onLeft ? "▶" : "◀"}
+                            </button>
+                        )}
+                    </div>
                     {note === null
                         ? <div className="omni-notes-status">Chargement…</div>
                         : <textarea

@@ -32,31 +32,45 @@ export function getUploadProgress() {
     return uploadProgress;
 }
 
-export async function uploadPickedFile(_: IpcMainInvokeEvent, time: string): Promise<string> {
+let uploadAbort: AbortController | null = null;
+
+export function cancelUpload() {
+    uploadAbort?.abort();
+}
+
+// Renvoie null si l'envoi a été annulé
+export async function uploadPickedFile(_: IpcMainInvokeEvent, time: string): Promise<string | null> {
     if (!pickedPath) throw new Error("Aucun fichier choisi.");
     const path = pickedPath;
     const name = basename(path);
     const { size } = statSync(path);
+    const { signal } = uploadAbort = new AbortController();
     const onProgress = (sent: number) => uploadProgress = sent / size;
     const toTempSh = () => {
         uploadProgress = 0;
-        return postFile("https://temp.sh/upload", {}, "file", path, name, onProgress);
+        return postFile("https://temp.sh/upload", {}, "file", path, name, onProgress, signal);
     };
 
-    if (size > LITTERBOX_MAX_SIZE) return toTempSh();
-
-    uploadProgress = 0;
     try {
-        return await postFile("https://litterbox.catbox.moe/resources/internals/api.php", {
-            reqtype: "fileupload",
-            time: ALLOWED_TIMES.has(time) ? time : "72h"
-        }, "fileToUpload", path, name, onProgress);
-    } catch (litterboxError) {
+        if (size > LITTERBOX_MAX_SIZE) return await toTempSh();
+
+        uploadProgress = 0;
         try {
-            return await toTempSh();
-        } catch (tempShError) {
-            throw new Error(`${(litterboxError as Error).message} / ${(tempShError as Error).message}`);
+            return await postFile("https://litterbox.catbox.moe/resources/internals/api.php", {
+                reqtype: "fileupload",
+                time: ALLOWED_TIMES.has(time) ? time : "72h"
+            }, "fileToUpload", path, name, onProgress, signal);
+        } catch (litterboxError) {
+            if (signal.aborted) throw litterboxError;
+            try {
+                return await toTempSh();
+            } catch (tempShError) {
+                throw new Error(`${(litterboxError as Error).message} / ${(tempShError as Error).message}`);
+            }
         }
+    } catch (e) {
+        if (signal.aborted) return null;
+        throw e;
     }
 }
 
