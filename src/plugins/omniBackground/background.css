@@ -56,8 +56,18 @@ body [class*="layers_"] > [class*="layer_"]:first-child [class*="guilds_"] [clas
 
 /* 2. Colonne des salons (sidebar) */
 body [class*="layers_"] > [class*="layer_"]:first-child [class*="base_"] [class*="sidebar_"],
-body [class*="layers_"] > [class*="layer_"]:first-child [class*="base_"] [class*="sidebar_"] [class*="container_"],
-body [class*="layers_"] > [class*="layer_"]:first-child [class*="base_"] [class*="sidebar_"] [class*="scroller_"] {
+body
+    [class*="layers_"]
+    > [class*="layer_"]:first-child
+    [class*="base_"]
+    [class*="sidebar_"]
+    [class*="container_"],
+body
+    [class*="layers_"]
+    > [class*="layer_"]:first-child
+    [class*="base_"]
+    [class*="sidebar_"]
+    [class*="scroller_"] {
     background: rgb(0 0 0 / 35%) !important;
 }
 
@@ -70,8 +80,16 @@ body [class*="layers_"] > [class*="layer_"]:first-child [class*="panels_"] [clas
 /* 4. Zone de discussion / Messages */
 body [class*="layers_"] > [class*="layer_"]:first-child [class*="chat_"],
 body [class*="layers_"] > [class*="layer_"]:first-child [class*="chatContent_"],
-body [class*="layers_"] > [class*="layer_"]:first-child [class*="chatContent_"] [class*="messagesWrapper_"],
-body [class*="layers_"] > [class*="layer_"]:first-child [class*="chatContent_"] [class*="scroller_"] {
+body
+    [class*="layers_"]
+    > [class*="layer_"]:first-child
+    [class*="chatContent_"]
+    [class*="messagesWrapper_"],
+body
+    [class*="layers_"]
+    > [class*="layer_"]:first-child
+    [class*="chatContent_"]
+    [class*="scroller_"] {
     background: rgb(0 0 0 / 25%) !important;
 }
 
@@ -97,7 +115,11 @@ body [class*="layers_"] > [class*="layer_"]:first-child [class*="container_"][cl
 
 /* 8. Messages privés (liste d'amis et DMs) */
 body [class*="layers_"] > [class*="layer_"]:first-child [class*="privateChannels_"],
-body [class*="layers_"] > [class*="layer_"]:first-child [class*="privateChannels_"] [class*="scroller_"],
+body
+    [class*="layers_"]
+    > [class*="layer_"]:first-child
+    [class*="privateChannels_"]
+    [class*="scroller_"],
 body [class*="layers_"] > [class*="layer_"]:first-child [class*="nowPlayingColumn_"] {
     background: rgb(0 0 0 / 35%) !important;
 }
